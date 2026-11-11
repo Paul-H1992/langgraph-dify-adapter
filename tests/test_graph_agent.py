@@ -33,7 +33,7 @@ def test_json_agent_executes_known_tool_then_returns_final_answer():
 
 
 def test_json_agent_retries_invalid_output_up_to_limit():
-    model = SequenceModel(["not JSON", "plain response"])
+    model = SequenceModel(["{not JSON", "plain response"])
     graph = build_json_agent(model, {}, "Answer.", max_retry=1)
 
     result = graph.invoke({"messages": [HumanMessage(content="hi")], "retry_count": 0})

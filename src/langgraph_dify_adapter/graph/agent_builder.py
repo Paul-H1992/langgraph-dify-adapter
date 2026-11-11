@@ -38,7 +38,8 @@ def build_json_agent(
         return {"messages": [response]}
 
     def parse_and_route(state: AgentState):
-        ok, data = safe_json_loads(_content_as_text(state["messages"][-1].content))
+        text = _content_as_text(state["messages"][-1].content)
+        ok, data = safe_json_loads(text)
         valid = (
             ok
             and isinstance(data, dict)
@@ -48,7 +49,7 @@ def build_json_agent(
         if valid:
             return {"parsed_action": data}
         retries = state.get("retry_count", 0)
-        if retries < max_retry:
+        if _looks_like_json(text) and retries < max_retry:
             return {"parsed_action": None, "retry_count": retries + 1}
         return {"parsed_action": None}
 
@@ -88,7 +89,8 @@ def _content_as_text(content: Any) -> str:
 
 
 def _parse_route(state: AgentState, tools: dict[str, Callable[..., Any]], max_retry: int) -> str:
-    ok, data = safe_json_loads(_content_as_text(state["messages"][-1].content))
+    text = _content_as_text(state["messages"][-1].content)
+    ok, data = safe_json_loads(text)
     if (
         ok
         and isinstance(data, dict)
@@ -96,4 +98,8 @@ def _parse_route(state: AgentState, tools: dict[str, Callable[..., Any]], max_re
         and isinstance(data.get("args", {}), dict)
     ):
         return "tool"
-    return "retry" if state.get("retry_count", 0) < max_retry else "done"
+    return "retry" if _looks_like_json(text) and state.get("retry_count", 0) < max_retry else "done"
+
+
+def _looks_like_json(text: str) -> bool:
+    return text.lstrip().startswith(("{", "["))
