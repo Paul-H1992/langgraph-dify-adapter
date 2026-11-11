@@ -2,6 +2,7 @@ import os
 
 from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.sqlite import SqliteSaver
+
 from langgraph_dify_adapter import DifyUniversalChatModel, build_json_agent
 
 llm = DifyUniversalChatModel(

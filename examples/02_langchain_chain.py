@@ -1,6 +1,7 @@
 import os
 
 from langchain_core.prompts import ChatPromptTemplate
+
 from langgraph_dify_adapter import DifyUniversalChatModel
 
 llm = DifyUniversalChatModel(

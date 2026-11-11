@@ -7,14 +7,13 @@ name = "langgraph-dify-adapter"
 version = "0.1.0"
 description = "Use private Dify chat apps as LangChain chat models in LangGraph applications."
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "MIT"
 requires-python = ">=3.10"
 authors = [{ name = "Paul H" }]
 keywords = ["dify", "langchain", "langgraph", "chat-model", "private-deployment"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",

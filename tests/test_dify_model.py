@@ -54,9 +54,11 @@ def test_http_failure_is_wrapped_with_status_and_body():
     response.status_code = 401
     response.text = "invalid key"
     response.raise_for_status.side_effect = __import__("requests").HTTPError("401")
-    with patch("langgraph_dify_adapter.dify_chat_model.requests.post", return_value=response):
-        with pytest.raises(DifyAPIError, match="401.*invalid key"):
-            make_model().invoke("hello")
+    with (
+        patch("langgraph_dify_adapter.dify_chat_model.requests.post", return_value=response),
+        pytest.raises(DifyAPIError, match="401.*invalid key"),
+    ):
+        make_model().invoke("hello")
 
 
 def test_stream_returns_langchain_chunks_and_accumulates_answer():
