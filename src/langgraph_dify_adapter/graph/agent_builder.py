@@ -88,7 +88,12 @@ def _content_as_text(content: Any) -> str:
 
 
 def _parse_route(state: AgentState, tools: dict[str, Callable[..., Any]], max_retry: int) -> str:
-    data = state.get("parsed_action")
-    if data and data.get("action") in tools and isinstance(data.get("args", {}), dict):
+    ok, data = safe_json_loads(_content_as_text(state["messages"][-1].content))
+    if (
+        ok
+        and isinstance(data, dict)
+        and data.get("action") in tools
+        and isinstance(data.get("args", {}), dict)
+    ):
         return "tool"
     return "retry" if state.get("retry_count", 0) < max_retry else "done"
