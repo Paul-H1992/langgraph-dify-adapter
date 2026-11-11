@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Literal
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import END, START, MessagesState, StateGraph
@@ -15,6 +15,7 @@ from ..utils import safe_json_loads
 class AgentState(MessagesState):
     retry_count: int
     parsed_action: dict[str, Any] | None
+    next_step: Literal["tool", "retry", "done"]
 
 
 def build_json_agent(
@@ -47,11 +48,11 @@ def build_json_agent(
             and isinstance(data.get("args", {}), dict)
         )
         if valid:
-            return {"parsed_action": data}
+            return {"parsed_action": data, "next_step": "tool"}
         retries = state.get("retry_count", 0)
         if _looks_like_json(text) and retries < max_retry:
-            return {"parsed_action": None, "retry_count": retries + 1}
-        return {"parsed_action": None}
+            return {"parsed_action": None, "retry_count": retries + 1, "next_step": "retry"}
+        return {"parsed_action": None, "next_step": "done"}
 
     def retry(state: AgentState):
         return {"messages": [HumanMessage(content=(
@@ -76,7 +77,7 @@ def build_json_agent(
     graph.add_edge(START, "llm")
     graph.add_edge("llm", "parse")
     graph.add_conditional_edges(
-        "parse", lambda state: _parse_route(state, tools, max_retry),
+        "parse", _parse_route,
         {"tool": "tool", "retry": "retry", "done": END},
     )
     graph.add_edge("retry", "llm")
@@ -88,17 +89,8 @@ def _content_as_text(content: Any) -> str:
     return content if isinstance(content, str) else json.dumps(content, ensure_ascii=False)
 
 
-def _parse_route(state: AgentState, tools: dict[str, Callable[..., Any]], max_retry: int) -> str:
-    text = _content_as_text(state["messages"][-1].content)
-    ok, data = safe_json_loads(text)
-    if (
-        ok
-        and isinstance(data, dict)
-        and data.get("action") in tools
-        and isinstance(data.get("args", {}), dict)
-    ):
-        return "tool"
-    return "retry" if _looks_like_json(text) and state.get("retry_count", 0) < max_retry else "done"
+def _parse_route(state: AgentState) -> str:
+    return state["next_step"]
 
 
 def _looks_like_json(text: str) -> bool:
